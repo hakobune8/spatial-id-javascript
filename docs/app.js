@@ -115,7 +115,7 @@
     hEl.value = String(DEFAULT_ALT);
     zEl.value = String(DEFAULT_ZOOM);
 
-    const map = L.map("map").setView([DEFAULT_LAT, DEFAULT_LNG], 16);
+    const map = L.map("map").setView([DEFAULT_LAT, DEFAULT_LNG], 17);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -257,17 +257,23 @@
       currentLayer = L.geoJSON(geo, {
         style: {
           color: "#2457d6",
-          weight: 2,
-          fillOpacity: 0.2
+          weight: 3,
+          fillOpacity: 0.24
         }
       }).addTo(map);
 
-      currentMarker = L.marker([center.lat, center.lng]).addTo(map);
+      currentMarker = L.circleMarker([center.lat, center.lng], {
+        radius: 8,
+        color: "#2457d6",
+        weight: 3,
+        fillColor: "#2457d6",
+        fillOpacity: 0.9
+      }).addTo(map);
 
       const bounds = currentLayer.getBounds();
       if (bounds.isValid()) {
         map.fitBounds(bounds, {
-          padding: [20, 20],
+          padding: [36, 36],
           maxZoom: 18
         });
       }
@@ -353,7 +359,6 @@
 
     applyTranslations("ja");
 
-    // 初期表示時にも出力を表示する
     calculate();
   }
 
