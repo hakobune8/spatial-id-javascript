@@ -15,8 +15,7 @@
 ---
 
 ## 公開ページ
-https://aoshima-yuki.github.io/ouranos-gex-lib-for-JavaScript/
-
+https://ods-is-stid.github.io/ouranos-gex-lib-for-JavaScript/
 ---
 
 ## 実装概要
