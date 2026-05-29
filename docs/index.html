@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>空間ID試行環境</title>
+  <link rel="stylesheet" href="style.css" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+
+  <style>
+    :root {
+      --border: #d9e2ef;
+      --muted: #5f6f89;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --primary: #2457d6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #1f2937;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 20px 0 16px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .page-title-wrap h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      line-height: 1.2;
+    }
+
+    .page-description {
+      max-width: 840px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      white-space: pre-line;
+    }
+
+    .lang-switch {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .lang-switch select,
+    input {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: #1f2937;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 14px;
+      align-items: stretch;
+      margin-bottom: 14px;
+    }
+
+    .side-grid {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .main-grid {
+      display: grid;
+      min-height: 100%;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(17, 24, 39, 0.05);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+    }
+
+    .field-label {
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+
+    input {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      font-size: 0.96rem;
+    }
+
+    input:invalid,
+    input:out-of-range {
+      border-color: var(--border);
+    }
+
+    .message-wrap {
+      grid-column: 1 / -1;
+      min-height: 1.5em;
+    }
+
+    .message {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .result-card {
+      display: grid;
+      gap: 8px;
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: 80px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px 0;
+      min-height: 48px;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .result-value {
+      overflow-wrap: anywhere;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #111827;
+    }
+
+    .map-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .map {
+      flex: 1;
+      min-height: 260px;
+      height: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .link-list {
+      margin: 0;
+      padding-left: 1.2em;
+      line-height: 1.7;
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      text-align: center;
+    }
+
+    @media (max-width: 920px) {
+      .layout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .map {
+        height: 360px;
+        min-height: 360px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        width: min(100% - 20px, 1180px);
+        padding-top: 12px;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-row {
+        grid-template-columns: 1fr;
+      }
+
+      .result-value {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <header class="page-header">
+      <div class="page-title-wrap">
+        <h1 data-i18n="pageTitle">空間ID試行環境</h1>
+        <p class="page-description" data-i18n="pageDesc">
+緯度・経度・標高・ズームレベルから空間ID（z/f/x/y）を算出できます。
+地図をクリックして座標を入力することもできます。
+        </p>
+      </div>
+
+      <div class="lang-switch">
+        <label for="lang-select">Language</label>
+        <select id="lang-select" aria-label="language switcher">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="layout-grid">
+      <div class="side-grid">
+        <section class="panel input-panel">
+          <div class="panel-header">
+            <h2 data-i18n="inputTitle">入力</h2>
+          </div>
+
+          <form id="calc-form" class="form-grid" novalidate>
+            <label class="field">
+              <span class="field-label" data-i18n="latLabel">緯度（10進度）</span>
+              <input
+                type="number"
+                id="lat"
+                step="0.0000001"
+                min="-85.05112878"
+                max="85.05112878"
+                value="35.7300467"
+                inputmode="decimal"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label" data-i18n="lngLabel">経度（10進度）</span>
+              <input
+                type="number"
+                id="lng"
+                step="0.0000001"
+                min="-180"
+                max="180"
+                value="139.7474538"
+                inputmode="decimal"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label" data-i18n="altLabel">標高（m）</span>
+              <input
+                type="number"
+                id="h"
+                step="0.01"
+                min="-33554432"
+                max="33554432"
+                value="0"
+                inputmode="decimal"
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label" data-i18n="zoomLabel">ズームレベル</span>
+              <input
+                type="number"
+                id="z"
+                step="1"
+                min="0"
+                max="25"
+                value="20"
+                inputmode="numeric"
+                required
+              />
+            </label>
+
+            <div class="message-wrap">
+              <p id="msg" class="message" aria-live="polite"></p>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel result-panel">
+          <div class="panel-header">
+            <h2 data-i18n="resultTitle">出力</h2>
+          </div>
+
+          <div class="result-card">
+            <div class="result-row">
+              <div class="result-label" data-i18n="resultLabel">空間ID</div>
+              <code id="zfxy" class="result-value">-</code>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="main-grid">
+        <section class="panel map-panel">
+          <div class="panel-header">
+            <h2 data-i18n="mapTitle">地図</h2>
+          </div>
+
+          <div id="map" class="map" aria-label="map"></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="panel links-panel">
+      <div class="panel-header">
+        <h2 data-i18n="linksTitle">関連情報</h2>
+      </div>
+
+      <ul class="link-list">
+        <li>
+          <a
+            href="https://www.ipa.go.jp/digital/architecture/guidelines/4dspatio-temporal-guideline.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-i18n="guidelineLink"
+          >
+            4次元時空間情報利活用のための空間IDガイドライン
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://github.com/ODS-IS-STID"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-i18n="repoLink"
+          >
+            Open Data Spaces 4次元時空間ID 関連リポジトリ
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <footer class="footer-note" data-i18n="footerNote">
+      本画面は試行環境です。表示結果は利用者の責任においてご確認ください。
+    </footer>
+  </main>
+
+  <script src="./vendor/spatialid/index.js"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""
+  ></script>
+  <script src="./app.js"></script>
+</body>
+</html>
