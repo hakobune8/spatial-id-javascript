@@ -1,6 +1,9 @@
 # ウラノスGEX 4次元時空間情報基盤用 共通ライブラリ(JavaScript版)
 ![Voxel_Image](voxel_image.png)
 
+> [!NOTE]
+> このパッケージは [ODS-IS-STID/ouranos-gex-lib-for-JavaScript](https://github.com/ODS-IS-STID/ouranos-gex-lib-for-JavaScript) の非公式forkです。元実装との互換性を維持しながら、npm向けの配布設定と依存関係を修正しています。
+
 ## 概要
 - 任意の座標を空間IDに変換するライブラリです。
 - 空間ID仕様については以下のリンクを参照して下さい。
@@ -10,11 +13,17 @@
 ## 共通ライブラリ利用方法
 1. npmインストール
 ```
-npm install git+https://github.com/ouranos-gex/ouranos-gex-lib-for-JavaScript.git
+npm install @hakobune8/spatial-id-javascript
 ```
 1. モジュールのロード
+```js
+import { Space } from '@hakobune8/spatial-id-javascript'
 ```
-import { Space } from 'ouranos-gex-lib-for-javascript'
+
+CommonJSからも利用できます。
+
+```js
+const { Space } = require('@hakobune8/spatial-id-javascript');
 ```
 
 ## 注意事項
