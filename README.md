@@ -26,6 +26,27 @@ CommonJSからも利用できます。
 const { Space } = require('@hakobune8/spatial-id-javascript');
 ```
 
+## リリース
+
+GitHub Releaseを公開すると、`.github/workflows/publish.yml`がReleaseのタグをcheckoutし、npm Trusted Publishing（OIDC）で同じversionを公開します。通常のReleaseは`latest`、prereleaseは`next`タグになります。GitHub Releaseのタグは`package.json`のversionに`v`を付けた値（例: `v0.1.0`）にしてください。
+
+初回のみ、パッケージがnpm registryにまだ存在せずTrusted Publisherを登録できないため、2FAを使用して手動公開します。
+
+```sh
+npm publish --access public
+```
+
+初回公開後、npmjs.comのpackage settingsでTrusted Publisherを次の内容で登録します。
+
+- Provider: GitHub Actions
+- Organization or user: `hakobune8`
+- Repository: `spatial-id-javascript`
+- Workflow filename: `publish.yml`
+- Environment: 未指定
+- Allowed actions: `npm publish`
+
+この設定後は長期的な`NPM_TOKEN`は不要です。初回手動公開と同じversionのGitHub Releaseを後から作成した場合、workflowはnpm registryを確認してpublish済みのversionを安全にskipします。
+
 ## 注意事項
 * ライブラリの入力可能な緯度の最大、最小値は「±85.0511287798」とします。
 * 精度レベルの指定範囲は、0から35とします。
