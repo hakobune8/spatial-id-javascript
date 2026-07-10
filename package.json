@@ -1,36 +1,53 @@
 {
-  "name": "ouranos-gex-lib-for-javascript",
-  "version": "0.0.0",
-  "description": "The reference implementation of the Spatial ID Object Model Specification for JavaScript or TypeScript consumers.",
-  "main": "dist/index.js",
-  "module": "dist/index.es.js",
-  "types": "dist/index.d.ts",
+  "name": "@hakobune8/spatial-id-javascript",
+  "version": "0.1.0",
+  "description": "JavaScript implementation of the Ouranos GEX Spatial ID specification.",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
   "files": [
     "README.md",
     "LICENSE",
-    "package.json",
-    "dist/**/*",
-    "dist/*"
+    "dist"
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "jest"
+    "test": "jest --runInBand",
+    "test:package": "node scripts/test-package.mjs",
+    "prepack": "npm run build && npm test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ouranos-gex/ouranos-gex-lib-for-JavaScript.git"
+    "url": "git+https://github.com/hakobune8/spatial-id-javascript.git"
   },
-  "keywords": [],
+  "keywords": [
+    "spatial-id",
+    "zfxy",
+    "gis"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ouranos-gex/ouranos-gex-lib-for-JavaScript/issues"
+    "url": "https://github.com/hakobune8/spatial-id-javascript/issues"
   },
-  "homepage": "https://github.com/ouranos-gex/ouranos-gex-lib-for-JavaScript#readme",
+  "homepage": "https://github.com/hakobune8/spatial-id-javascript#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@turf/bbox": "^6.5.0",
+    "@turf/boolean-intersects": "^6.5.0"
+  },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^22.0.0",
     "@rollup/plugin-node-resolve": "^13.2.1",
-    "@turf/bbox": "^6.5.0",
-    "@turf/boolean-intersects": "^6.5.0",
     "@types/geojson": "^7946.0.8",
     "@types/jest": "^27.4.1",
     "jest": "^27.5.1",

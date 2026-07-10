@@ -6,12 +6,13 @@ const packageJson = require('./package.json');
 
 const config = {
   input: 'src/index.ts',
+  external: Object.keys(packageJson.dependencies),
   output: [
     {
       file: packageJson.main,
-      format: 'umd',
+      format: 'cjs',
       sourcemap: true,
-      name: 'SpatialId',
+      exports: 'named',
     },
     {
       file: packageJson.module,
