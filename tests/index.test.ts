@@ -24,6 +24,10 @@ describe('Space', () => {
     expect(space.up(1).tilehash).toStrictEqual('5');
     expect(space.down(1).zfxy).toStrictEqual({z: 1, f: -1, x: 0, y: 0});
     expect(space.down(1).tilehash).toStrictEqual('-5');
+
+    const negativeFSpace = new Space('1/-1/0/0');
+    expect(negativeFSpace.zfxy).toStrictEqual({z: 1, f: -1, x: 0, y: 0});
+    expect(negativeFSpace.tilehash).toStrictEqual('-5');
   });
 
   const zfxyToPolygonTruthTable: [string, number[][]][] = [

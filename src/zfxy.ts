@@ -57,7 +57,7 @@ export function getSurrounding(tile: ZFXYTile = ZFXY_ROOT_TILE): ZFXYTile[] {
 }
 
 export function parseZFXYString(str: string): ZFXYTile | undefined {
-  const match = str.match(/^\/?(\d+)\/(?:(\d+)\/)?(\d+)\/(\d+)$/);
+  const match = str.match(/^\/?(\d+)\/(?:(-?\d+)\/)?(\d+)\/(\d+)$/);
   if (!match) {
     return undefined;
   }
