@@ -1,4 +1,4 @@
-import { Polygon } from 'geojson';
+import { MultiPolygon, Polygon } from 'geojson';
 import { MAX_ALTITUDE, MIN_ALTITUDE, Space, ZFXY_ALTITUDE_LIMIT, getMinimumAltitude } from '../src/index';
 
 describe('altitude range exports', () => {
@@ -461,4 +461,85 @@ describe('spacesForGeometry', () => {
     };
     expect(() => Space.spacesForGeometry(geometry, 20)).toThrow('mix 2D and 3D');
   });
+
+  it.each([15, 20, 25])(
+    'handles distant 3D MultiPolygon parts without scanning their bbox at zoom %i',
+    (zoom) => {
+      const tokyo = new Space({lng: 139.747, lat: 35.73, alt: 0}, zoom);
+      const osaka = new Space({lng: 135.502, lat: 34.693, alt: 0}, zoom);
+      const voxelHeight = 2 ** (25 - zoom);
+      const geometry: MultiPolygon = {
+        type: 'MultiPolygon',
+        coordinates: [tokyo, osaka].map((tile) => (
+          polygonInsideTile3d(tile, voxelHeight, voxelHeight * 3 - 1).coordinates
+        )),
+      };
+      const spaces = Space.spacesForGeometry(geometry, zoom, {maxCandidates: 1_000});
+      const expected = [tokyo, osaka]
+        .sort((a, b) => a.zfxy.x - b.zfxy.x || a.zfxy.y - b.zfxy.y)
+        .flatMap((tile) => [
+          {...tile.zfxy, f: 1},
+          {...tile.zfxy, f: 2},
+        ]);
+      expect(spaces.map(({zfxy}) => zfxy)).toStrictEqual(expected);
+    }
+  );
+
+  it('does not return tiles entirely inside a polygon hole', () => {
+    const outer = new Space({lng: 139.747, lat: 35.73, alt: 0}, 14);
+    const hole = new Space({
+      z: 16,
+      f: 0,
+      x: outer.zfxy.x * 4 + 1,
+      y: outer.zfxy.y * 4 + 1,
+    });
+    const geometry: Polygon = {
+      type: 'Polygon',
+      coordinates: [outer.toGeoJSON().coordinates[0], hole.toGeoJSON().coordinates[0]],
+    };
+    const spaces = Space.spacesForGeometry(geometry, 18);
+    const insideHole = {
+      z: 18,
+      f: 0,
+      x: hole.zfxy.x * 4 + 1,
+      y: hole.zfxy.y * 4 + 1,
+    };
+    expect(spaces.some(({zfxy}) => (
+      zfxy.x === insideHole.x && zfxy.y === insideHole.y
+    ))).toBe(false);
+    expect(spaces.length).toBeGreaterThan(0);
+  });
+
+  it('fails before traversal when the altitude envelope exceeds maxSpaces', () => {
+    const tile = new Space({lng: 139.747, lat: 35.73, alt: 0}, 20);
+    expect(() => Space.spacesForGeometry(
+      polygonInsideTile3d(tile, 0, 100),
+      20,
+      {maxSpaces: 2}
+    )).toThrow('altitude envelope requires');
+  });
+
+  it('stops a complex search at maxCandidates with an estimate', () => {
+    expect(() => Space.spacesForGeometry(
+      testPolygons.SIMPLE,
+      20,
+      {maxCandidates: 1}
+    )).toThrow('bbox upper bound');
+  });
+
+  it('stops before allocating a horizontal result above maxSpaces', () => {
+    expect(() => Space.spacesForGeometry(
+      testPolygons.DETAILED,
+      20,
+      {maxSpaces: 2}
+    )).toThrow('Geometry result exceeds maxSpaces');
+  });
+
+  it.each([
+    [{maxSpaces: 0}, 'maxSpaces'],
+    [{maxCandidates: 1.5}, 'maxCandidates'],
+  ])('rejects invalid search options: %j', (options, message) => {
+    expect(() => Space.spacesForGeometry(testPolygons.SIMPLE, 15, options)).toThrow(message);
+  });
+
 });

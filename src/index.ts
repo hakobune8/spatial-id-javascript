@@ -9,6 +9,15 @@ import { bboxToTile, pointToTile } from "./tilebelt";
 export { MIN_ALTITUDE, MAX_ALTITUDE, ZFXY_ALTITUDE_LIMIT, getMinimumAltitude } from "./zfxy";
 
 const DEFAULT_ZOOM = 25 as const;
+export const DEFAULT_MAX_GEOMETRY_SPACES = 100_000 as const;
+export const DEFAULT_MAX_GEOMETRY_CANDIDATES = 1_000_000 as const;
+
+export type GeometrySearchOptions = {
+  /** Maximum number of Spaces returned by one synchronous call. */
+  maxSpaces?: number;
+  /** Maximum number of quadtree nodes tested for intersection. */
+  maxCandidates?: number;
+};
 
 function geometryPositions(geom: Geometry): number[][] {
   if (geom.type === 'GeometryCollection') {
@@ -272,11 +281,23 @@ export class Space {
   /** Calculates the spaces intersecting a geometry. For 3D coordinates, every
    * vertical voxel between the minimum and maximum vertex altitude is returned.
    */
-  static spacesForGeometry(geom: Geometry, zoom: number): Space[] {
+  static spacesForGeometry(
+    geom: Geometry,
+    zoom: number,
+    options: GeometrySearchOptions = {}
+  ): Space[] {
     const z = zoom;
 
     if (!Number.isSafeInteger(z) || z < MIN_ZOOM || z > MAX_ZOOM) {
       throw new Error(`zoom must be an integer between ${MIN_ZOOM} and ${MAX_ZOOM}.`);
+    }
+    const maxSpaces = options.maxSpaces ?? DEFAULT_MAX_GEOMETRY_SPACES;
+    const maxCandidates = options.maxCandidates ?? DEFAULT_MAX_GEOMETRY_CANDIDATES;
+    if (!Number.isSafeInteger(maxSpaces) || maxSpaces < 1) {
+      throw new Error('maxSpaces must be a positive safe integer.');
+    }
+    if (!Number.isSafeInteger(maxCandidates) || maxCandidates < 1) {
+      throw new Error('maxCandidates must be a positive safe integer.');
     }
 
     const positions = geometryPositions(geom);
@@ -294,31 +315,69 @@ export class Space {
     const [lng, lat] = positions[0];
     const minF = calculateZFXY({lng, lat, alt: minAltitude, zoom: z}).f;
     const maxF = calculateZFXY({lng, lat, alt: maxAltitude, zoom: z}).f;
+    const verticalCount = maxF - minF + 1;
+    if (verticalCount > maxSpaces) {
+      throw new Error(
+        `Geometry altitude envelope requires ${verticalCount} Spaces per horizontal tile, ` +
+        `exceeding maxSpaces (${maxSpaces}). Increase maxSpaces or use a coarser zoom.`
+      );
+    }
 
-    if (z === 0) return [new Space({z: 0, f: 0, x: 0, y: 0})];
+    if (z === 0) {
+      const roots: Space[] = [];
+      for (let f = minF; f <= maxF; f++) roots.push(new Space({z: 0, f, x: 0, y: 0}));
+      return roots;
+    }
 
-    // this can be optimized a lot!
-    const bbox = turfBBox(geom),
-          min = pointToTile(bbox[0], bbox[1], z),
-          max = pointToTile(bbox[2], bbox[3], z),
-          minX = Math.min(min[0], max[0]),
-          minY = Math.min(min[1], max[1]),
-          maxX = Math.max(max[0], min[0]),
-          maxY = Math.max(max[1], min[1]),
-          spaces: Space[] = [];
+    const bbox = turfBBox(geom);
+    const minTile = pointToTile(bbox[0], bbox[1], z);
+    const maxTile = pointToTile(bbox[2], bbox[3], z);
+    const bboxWidth = Math.abs(maxTile[0] - minTile[0]) + 1;
+    const bboxHeight = Math.abs(maxTile[1] - minTile[1]) + 1;
+    const bboxSpaceUpperBound = bboxWidth * bboxHeight * verticalCount;
+    const [startX, startY, startZ] = bboxToTile(bbox, z);
+    const stack: ZFXYTile[] = [{x: startX, y: startY, z: startZ, f: 0}];
+    const horizontalTiles: ZFXYTile[] = [];
+    const intersectable = geom as Exclude<Geometry, {type: 'GeometryCollection'}>;
+    let candidates = 0;
 
-    // scanline polygon fill algorithm
-    for (let x = minX; x <= maxX; x++) {
-      for (let y = minY; y <= maxY; y++) {
-        const footprint = new Space({x, y, z, f: 0});
-        // geometryPositions rejects GeometryCollection above, but GeoJSON's
-        // Geometry union is not narrowed across that helper call.
-        if (turfBooleanIntersects(geom as Exclude<Geometry, {type: 'GeometryCollection'}>, footprint.toGeoJSON())) {
-          for (let f = minF; f <= maxF; f++) {
-            spaces.push(new Space({x, y, z, f}));
-          }
-        }
+    while (stack.length > 0) {
+      const tile = stack.pop()!;
+      candidates++;
+      if (candidates > maxCandidates) {
+        throw new Error(
+          `Geometry search exceeded maxCandidates (${maxCandidates}); the bbox upper bound is ` +
+          `${bboxSpaceUpperBound} Spaces. Increase maxCandidates, reduce zoom, or split the geometry.`
+        );
       }
+      const footprint = new Space(tile);
+      if (!turfBooleanIntersects(intersectable, footprint.toGeoJSON())) continue;
+      if (tile.z === z) {
+        horizontalTiles.push(tile);
+        if (horizontalTiles.length * verticalCount > maxSpaces) {
+          throw new Error(
+            `Geometry result exceeds maxSpaces (${maxSpaces}); the bbox upper bound is ` +
+            `${bboxSpaceUpperBound} Spaces. Increase maxSpaces, reduce zoom, or split the geometry.`
+          );
+        }
+        continue;
+      }
+
+      const childZ = tile.z + 1;
+      const childX = tile.x * 2;
+      const childY = tile.y * 2;
+      stack.push(
+        {x: childX, y: childY, z: childZ, f: 0},
+        {x: childX, y: childY + 1, z: childZ, f: 0},
+        {x: childX + 1, y: childY, z: childZ, f: 0},
+        {x: childX + 1, y: childY + 1, z: childZ, f: 0}
+      );
+    }
+
+    horizontalTiles.sort((a, b) => a.x - b.x || a.y - b.y);
+    const spaces: Space[] = [];
+    for (const {x, y} of horizontalTiles) {
+      for (let f = minF; f <= maxF; f++) spaces.push(new Space({x, y, z, f}));
     }
     return spaces;
   }

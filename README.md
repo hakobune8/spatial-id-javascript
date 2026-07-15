@@ -67,10 +67,12 @@ Space.boundingSpaceForGeometry( geometry, minZoom? )
 `minZoom` が指定している場合は、より少ない分解能（ズームレベル）の空間IDが作られるにしても、 `minZoom` での空間IDを返す。
 3D座標の3番目の値は高度（m）として扱われ、XYZすべてを包含する共通の空間IDを返します。高度0をまたいで異なるtilehashルートに属するGeometryは、単一の空間IDでは表現できないためエラーとなります。
 ```
-Space.spacesForGeometry( geometry, zoom )
+Space.spacesForGeometry( geometry, zoom, options? )
 ```
 `geometry` に渡された GeoJSON の Geometry オブジェクトに対して、その Geometry と指定の `zoom` での分解能（ズームレベル）の空間IDの共通集合を配列として返す。
 3D Geometryでは、水平形状と全頂点の最小～最大高度が作る範囲を覆うボクセルを返します。2D Geometryは従来どおり `f=0` として扱います。2D座標と3D座標の混在はサポートしません。
+
+交差する親タイルだけを再帰的に探索するため、離れたMultiPolygonや穴を含むPolygonでもbbox全体は走査しません。同期APIが巨大な配列を生成し続けることを防ぐため、既定で返却する空間数を100,000件、交差判定する候補を1,000,000件までに制限します。`options.maxSpaces` と `options.maxCandidates` で上限を変更できます。上限超過時はbboxによる事前上限見積りを含むエラーを返します。さらに大きな結果には、ズームを下げるかGeometryを分割してください。現在は非同期・ストリーミング形式を提供していません。
 ### メソッド
 `Space` のメソッドのドキュメンテーションは下記となります。
 #### `.center`
