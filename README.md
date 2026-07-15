@@ -65,10 +65,12 @@ Space.boundingSpaceForGeometry( geometry, minZoom? )
 ```
 `geometry` に渡された GeoJSON の Geometry オブジェクトに対して、最小分解能（ズームレベル）での空間IDを返す。
 `minZoom` が指定している場合は、より少ない分解能（ズームレベル）の空間IDが作られるにしても、 `minZoom` での空間IDを返す。
+3D座標の3番目の値は高度（m）として扱われ、XYZすべてを包含する共通の空間IDを返します。高度0をまたいで異なるtilehashルートに属するGeometryは、単一の空間IDでは表現できないためエラーとなります。
 ```
 Space.spacesForGeometry( geometry, zoom )
 ```
 `geometry` に渡された GeoJSON の Geometry オブジェクトに対して、その Geometry と指定の `zoom` での分解能（ズームレベル）の空間IDの共通集合を配列として返す。
+3D Geometryでは、水平形状と全頂点の最小～最大高度が作る範囲を覆うボクセルを返します。2D Geometryは従来どおり `f=0` として扱います。2D座標と3D座標の混在はサポートしません。
 ### メソッド
 `Space` のメソッドのドキュメンテーションは下記となります。
 #### `.center`

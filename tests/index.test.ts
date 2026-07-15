@@ -347,6 +347,18 @@ function polygonInsideTile(tile: Space): Polygon {
   };
 }
 
+function polygonInsideTile3d(tile: Space, minAlt: number, maxAlt: number): Polygon {
+  const polygon = polygonInsideTile(tile);
+  return {
+    type: 'Polygon',
+    coordinates: [polygon.coordinates[0].map(([lng, lat], index) => [
+      lng,
+      lat,
+      index % 2 === 0 ? minAlt : maxAlt,
+    ])],
+  };
+}
+
 describe('boundingSpaceForGeometry', () => {
   it('automatically detects the smallest tile that contains the polygon', () => {
     const space = Space.boundingSpaceForGeometry(testPolygons.SIMPLE);
@@ -368,6 +380,28 @@ describe('boundingSpaceForGeometry', () => {
   it.each([-1, 1.5, 36])('rejects an invalid zoom limit: %s', (zoom) => {
     expect(() => Space.boundingSpaceForGeometry(testPolygons.SIMPLE, zoom)).toThrow(
       'minZoom must be an integer'
+    );
+  });
+
+  it('finds the common XYZ parent for a 3D polygon', () => {
+    const tile = new Space({lng: 139.747, lat: 35.73, alt: 0}, 20);
+    const geometry = polygonInsideTile3d(tile, 32, 95);
+    expect(Space.boundingSpaceForGeometry(geometry, 20).zfxy).toStrictEqual(
+      tile.parent(18).zfxy
+    );
+  });
+
+  it('supports a negative-altitude 3D polygon', () => {
+    const tile = new Space({lng: 139.747, lat: 35.73, alt: 0}, 20);
+    const geometry = polygonInsideTile3d(tile, -95, -32);
+    expect(Space.boundingSpaceForGeometry(geometry, 20).zfxy.f).toBe(-1);
+  });
+
+  it('rejects a 3D polygon that spans separate altitude roots', () => {
+    const tile = new Space({lng: 139.747, lat: 35.73, alt: 0}, 25);
+    const geometry = polygonInsideTile3d(tile, -1, 1);
+    expect(() => Space.boundingSpaceForGeometry(geometry, 25)).toThrow(
+      'separate altitude roots'
     );
   });
 });
@@ -409,5 +443,22 @@ describe('spacesForGeometry', () => {
     expect(() => Space.spacesForGeometry(testPolygons.SIMPLE, zoom)).toThrow(
       'zoom must be an integer'
     );
+  });
+
+  it('returns every vertical voxel in a 3D altitude envelope', () => {
+    const tile = new Space({lng: 139.747, lat: 35.73, alt: 0}, 20);
+    const spaces = Space.spacesForGeometry(polygonInsideTile3d(tile, 32, 95), 20);
+    expect(spaces.map(({zfxy}) => zfxy)).toStrictEqual([
+      {...tile.zfxy, f: 1},
+      {...tile.zfxy, f: 2},
+    ]);
+  });
+
+  it('rejects mixed 2D and 3D positions', () => {
+    const geometry: Polygon = {
+      type: 'Polygon',
+      coordinates: [[[139, 35, 10], [139, 35.1], [139.1, 35.1, 20], [139, 35, 10]]],
+    };
+    expect(() => Space.spacesForGeometry(geometry, 20)).toThrow('mix 2D and 3D');
   });
 });
