@@ -9,11 +9,11 @@ export function isZFXYTile(tile: any): tile is ZFXYTile {
   if (![z, f, x, y].every(Number.isSafeInteger)) return false;
   if (z < MIN_ZOOM || z > MAX_ZOOM) return false;
 
-  const axisSize = 2 ** z;
+  const maxIndex = (2 ** z) - 1;
   return (
-    x >= 0 && x < axisSize &&
-    y >= 0 && y < axisSize &&
-    f >= -axisSize && f <= axisSize
+    x >= 0 && x <= maxIndex &&
+    y >= 0 && y <= maxIndex &&
+    f >= -maxIndex && f <= maxIndex
   );
 }
 
@@ -29,6 +29,14 @@ export const MIN_LATITUDE = -85.0511287798 as const;
 export const MAX_LATITUDE = 85.0511287798 as const;
 export const MIN_LONGITUDE = -180 as const;
 export const MAX_LONGITUDE = 180 as const;
+
+/** Returns the lowest altitude whose f index can be encoded at the zoom level. */
+export function getMinimumAltitude(zoom: number): number {
+  if (!Number.isSafeInteger(zoom) || zoom < MIN_ZOOM || zoom > MAX_ZOOM) {
+    throw new Error(`Zoom must be an integer between ${MIN_ZOOM} and ${MAX_ZOOM}.`);
+  }
+  return MIN_ALTITUDE + (ZFXY_ALTITUDE_LIMIT / (2 ** zoom));
+}
 
 const rad2deg = 180 / Math.PI;
 
@@ -148,9 +156,11 @@ export function calculateZFXY(input: CalculateZFXYInput): ZFXYTile {
   if (!Number.isFinite(meters)) {
     throw new Error('Altitude must be a finite number.');
   }
-  if (meters <= MIN_ALTITUDE || meters >= MAX_ALTITUDE) {
+  const minimumAltitude = getMinimumAltitude(input.zoom);
+  if (meters < minimumAltitude || meters >= MAX_ALTITUDE) {
     throw new Error(
-      `Altitude must be greater than ${MIN_ALTITUDE} and less than ${MAX_ALTITUDE} meters. ` +
+      `Altitude must be at least ${minimumAltitude} and less than ${MAX_ALTITUDE} meters ` +
+      `at zoom ${input.zoom}. ` +
       'This range is defined by the ZFXY root voxel and tilehash encoding.'
     );
   }
@@ -186,7 +196,7 @@ export function zfxyWraparound(tile: ZFXYTile): ZFXYTile {
   const axisSize = 2 ** z;
   return {
     z,
-    f: Math.max(Math.min(f, axisSize), -axisSize),
+    f: Math.max(Math.min(f, axisSize - 1), -(axisSize - 1)),
     x: ((x % axisSize) + axisSize) % axisSize,
     y: Math.max(0, Math.min(y, axisSize - 1)),
   }
