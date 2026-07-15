@@ -183,38 +183,30 @@ describe('Space', () => {
       ]);
     });
 
-    it('works by wrapping around boundaries', () => {
+    it('wraps longitude but does not wrap across the north pole', () => {
       const space = new Space('1111111111');
-      const zfxyStrs = space.surroundings().map(s => s.zfxyStr);
-      expect(zfxyStrs.length).toStrictEqual(26);
-      expect(zfxyStrs).toStrictEqual([
-        "/10/0/1/0",
-        "/10/0/0/1",
-        "/10/0/1/1",
-        "/10/0/1023/0",
-        "/10/0/0/1023",
-        "/10/0/1023/1023",
-        "/10/0/1/1023",
-        "/10/0/1023/1",
-        "/10/1/0/0",
-        "/10/1/1/0",
-        "/10/1/0/1",
-        "/10/1/1/1",
-        "/10/1/1023/0",
-        "/10/1/0/1023",
-        "/10/1/1023/1023",
-        "/10/1/1/1023",
-        "/10/1/1023/1",
-        "/10/-1/0/0",
-        "/10/-1/1/0",
-        "/10/-1/0/1",
-        "/10/-1/1/1",
-        "/10/-1/1023/0",
-        "/10/-1/0/1023",
-        "/10/-1/1023/1023",
-        "/10/-1/1/1023",
-        "/10/-1/1023/1",
-      ]);
+      const surroundings = space.surroundings();
+      const zfxyStrs = surroundings.map(s => s.zfxyStr);
+
+      expect(zfxyStrs).toHaveLength(17);
+      expect(new Set(zfxyStrs).size).toBe(zfxyStrs.length);
+      expect(zfxyStrs).not.toContain(space.zfxyStr);
+      expect(surroundings.every(({zfxy}) => zfxy.y === 0 || zfxy.y === 1)).toBe(true);
+      expect(zfxyStrs).toContain('/10/0/1023/0');
+      expect(zfxyStrs).not.toContain('/10/0/0/1023');
+    });
+
+    it('normalizes movement by more than one world width', () => {
+      const space = new Space('/3/0/0/4');
+      expect(space.move({x: -17}).zfxy.x).toBe(7);
+      expect(space.move({x: 25}).zfxy.x).toBe(1);
+    });
+
+    it('clamps north/south movement at the Web Mercator limits', () => {
+      const north = new Space('/3/0/0/0');
+      const south = new Space('/3/0/0/7');
+      expect(north.north(10).zfxy.y).toBe(0);
+      expect(south.south(10).zfxy.y).toBe(7);
     });
   });
 
