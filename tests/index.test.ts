@@ -146,6 +146,39 @@ describe('Space', () => {
       expect(space.parent(14).zfxy).toStrictEqual({z: 14, f: 0, x: 14552, y: 6451});
       expect(space.parent(0).zfxy).toStrictEqual({z: 0, f: 0, x: 0, y: 0});
     });
+
+    it.each([30, 31, 32, 35])('preserves safe integers at zoom %i', (z) => {
+      const axisSize = 2 ** z;
+      const tile = {
+        z,
+        f: (axisSize / 2) + 1,
+        x: axisSize - 1,
+        y: (axisSize / 2) + 1,
+      };
+      const space = new Space(tile);
+
+      expect(space.parent().zfxy).toStrictEqual({
+        z: z - 1,
+        f: Math.floor(tile.f / 2),
+        x: Math.floor(tile.x / 2),
+        y: Math.floor(tile.y / 2),
+      });
+      expect(space.tilehash).toHaveLength(z);
+      expect(new Space(space.tilehash).zfxy).toStrictEqual(tile);
+    });
+
+    it('rounds a negative f toward its containing parent', () => {
+      const tile = {z: 35, f: -17179869185, x: 17179869184, y: 17179869184};
+      const space = new Space(tile);
+
+      expect(space.parent().zfxy).toStrictEqual({
+        z: 34,
+        f: -8589934593,
+        x: 8589934592,
+        y: 8589934592,
+      });
+      expect(new Space(space.tilehash).zfxy).toStrictEqual(tile);
+    });
   });
 
   describe('surroundings', () => {
