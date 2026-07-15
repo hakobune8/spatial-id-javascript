@@ -170,15 +170,17 @@ export function calculateZFXY(input: CalculateZFXYInput): ZFXYTile {
 
 /**
  * Fix a tile that has out-of-bounds coordinates by:
- * for the x and y coordinates: wrapping the coordinates around.
+ * wrapping the x coordinate around and limiting the y coordinate to the
+ * Web Mercator tile range.
  * for the f coordinate: limiting to maximum or minimum.
  */
 export function zfxyWraparound(tile: ZFXYTile): ZFXYTile {
   const {z, f, x, y} = tile;
+  const axisSize = 2 ** z;
   return {
     z,
-    f: Math.max(Math.min(f, (2**z)), -(2**z)),
-    x: (x < 0) ? x + 2**z : x % 2**z,
-    y: (y < 0) ? y + 2**z : y % 2**z,
+    f: Math.max(Math.min(f, axisSize), -axisSize),
+    x: ((x % axisSize) + axisSize) % axisSize,
+    y: Math.max(0, Math.min(y, axisSize - 1)),
   }
 }

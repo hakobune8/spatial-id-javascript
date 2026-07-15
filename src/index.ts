@@ -104,25 +104,23 @@ export class Space {
   }
 
   /** Return an array of Space objects at the same zoom level that surround this Space
-   * object. This method does not return the Space object itself, so the array will
-   * contain 26 Space objects.
+   * object. This method does not return the Space object itself or duplicates. The
+   * array normally contains 26 objects and contains fewer at latitude/altitude limits.
    */
   surroundings(): Space[] {
-    return [
-      ...(
-        getSurrounding(this.zfxy)
-        .filter(({z,f,x,y}) => `/${z}/${f}/${x}/${y}` !== this.zfxyStr)
-        .map((tile) => new Space(tile))
-      ),
-      ...(
-        getSurrounding(this.up().zfxy)
-        .map((tile) => new Space(tile))
-      ),
-      ...(
-        getSurrounding(this.down().zfxy)
-        .map((tile) => new Space(tile))
-      ),
+    const surroundingTiles = [
+      ...getSurrounding(this.zfxy),
+      ...getSurrounding(this.up().zfxy),
+      ...getSurrounding(this.down().zfxy),
     ];
+    const uniqueTiles = new Map<string, ZFXYTile>();
+
+    for (const tile of surroundingTiles) {
+      const key = `/${tile.z}/${tile.f}/${tile.x}/${tile.y}`;
+      if (key !== this.zfxyStr) uniqueTiles.set(key, tile);
+    }
+
+    return [...uniqueTiles.values()].map((tile) => new Space(tile));
   }
 
   /** Returns true if a point lies within this Space. If the position's altitude is not
