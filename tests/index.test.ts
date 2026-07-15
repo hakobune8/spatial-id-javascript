@@ -1,5 +1,13 @@
 import { Polygon } from 'geojson';
-import { Space } from '../src/index';
+import { MAX_ALTITUDE, MIN_ALTITUDE, Space, ZFXY_ALTITUDE_LIMIT } from '../src/index';
+
+describe('altitude range exports', () => {
+  it('exposes the ZFXY root voxel limits', () => {
+    expect(ZFXY_ALTITUDE_LIMIT).toBe(2 ** 25);
+    expect(MIN_ALTITUDE).toBe(-(2 ** 25));
+    expect(MAX_ALTITUDE).toBe(2 ** 25);
+  });
+});
 
 describe('Space', () => {
   it('should be able to create a Space from lng/lat/alt', () => {

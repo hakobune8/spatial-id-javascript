@@ -18,6 +18,10 @@ export function isZFXYTile(tile: any): tile is ZFXYTile {
 }
 
 export const ZFXY_1M_ZOOM_BASE = 25 as const;
+/** The ZFXY root voxel spans this many meters above and below the geoid. */
+export const ZFXY_ALTITUDE_LIMIT = 2 ** ZFXY_1M_ZOOM_BASE;
+export const MIN_ALTITUDE = -ZFXY_ALTITUDE_LIMIT;
+export const MAX_ALTITUDE = ZFXY_ALTITUDE_LIMIT;
 export const ZFXY_ROOT_TILE: ZFXYTile = { f: 0, x: 0, y: 0, z: 0 };
 export const MIN_ZOOM = 0 as const;
 export const MAX_ZOOM = 35 as const;
@@ -144,11 +148,13 @@ export function calculateZFXY(input: CalculateZFXYInput): ZFXYTile {
   if (!Number.isFinite(meters)) {
     throw new Error('Altitude must be a finite number.');
   }
-  if (meters <= -(2**ZFXY_1M_ZOOM_BASE) || meters >= (2**ZFXY_1M_ZOOM_BASE)) {
-    // TODO: make altitude unlimited?
-    throw new Error(`ZFXY only supports altitude between -2^${ZFXY_1M_ZOOM_BASE} and +2^${ZFXY_1M_ZOOM_BASE}.`);
+  if (meters <= MIN_ALTITUDE || meters >= MAX_ALTITUDE) {
+    throw new Error(
+      `Altitude must be greater than ${MIN_ALTITUDE} and less than ${MAX_ALTITUDE} meters. ` +
+      'This range is defined by the ZFXY root voxel and tilehash encoding.'
+    );
   }
-  const f = Math.floor(((2 ** input.zoom) * meters) / (2 ** ZFXY_1M_ZOOM_BASE));
+  const f = Math.floor(((2 ** input.zoom) * meters) / ZFXY_ALTITUDE_LIMIT);
 
   // Algorithm adapted from tilebelt.js
   const d2r = Math.PI / 180;
