@@ -67,11 +67,11 @@ export class Space {
   }
 
   north(by: number = 1) {
-    return this.move({y: by});
+    return this.move({y: -by});
   }
 
   south(by: number = 1) {
-    return this.move({y: -by});
+    return this.move({y: by});
   }
 
   east(by: number = 1) {
