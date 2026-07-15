@@ -3,8 +3,8 @@ export type LngLatWithAltitude = {
   lng: number
   /** Latitude, in degrees */
   lat: number
-  /** Altitude from the geoid, in meters. Coordinate conversion supports the
-   * ZFXY root voxel range (-33,554,432, 33,554,432).
+  /** Altitude from the geoid, in meters. The maximum is below 33,554,432;
+   * the minimum depends on zoom and is exposed by getMinimumAltitude().
    */
   alt?: number
 }

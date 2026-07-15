@@ -6,7 +6,7 @@ import turfBooleanIntersects from '@turf/boolean-intersects';
 import type { Geometry, Polygon } from "geojson";
 import { bboxToTile, pointToTile } from "./tilebelt";
 
-export { MIN_ALTITUDE, MAX_ALTITUDE, ZFXY_ALTITUDE_LIMIT } from "./zfxy";
+export { MIN_ALTITUDE, MAX_ALTITUDE, ZFXY_ALTITUDE_LIMIT, getMinimumAltitude } from "./zfxy";
 
 const DEFAULT_ZOOM = 25 as const;
 
@@ -60,10 +60,12 @@ export class Space {
 
   /* - PUBLIC API - */
 
+  /** Moves upward, clamping at the highest tilehash-encodable f index. */
   up(by: number = 1) {
     return this.move({f: by});
   }
 
+  /** Moves downward, clamping at the lowest tilehash-encodable f index. */
   down(by: number = 1) {
     return this.move({f: -by});
   }

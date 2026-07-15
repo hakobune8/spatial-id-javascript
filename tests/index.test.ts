@@ -1,11 +1,12 @@
 import { Polygon } from 'geojson';
-import { MAX_ALTITUDE, MIN_ALTITUDE, Space, ZFXY_ALTITUDE_LIMIT } from '../src/index';
+import { MAX_ALTITUDE, MIN_ALTITUDE, Space, ZFXY_ALTITUDE_LIMIT, getMinimumAltitude } from '../src/index';
 
 describe('altitude range exports', () => {
   it('exposes the ZFXY root voxel limits', () => {
     expect(ZFXY_ALTITUDE_LIMIT).toBe(2 ** 25);
     expect(MIN_ALTITUDE).toBe(-(2 ** 25));
     expect(MAX_ALTITUDE).toBe(2 ** 25);
+    expect(getMinimumAltitude(25)).toBe(MIN_ALTITUDE + 1);
   });
 });
 
@@ -46,6 +47,8 @@ describe('Space', () => {
       null,
       {z: 1, f: 0, x: 2, y: 0},
       {z: 1, f: 0, x: 0.5, y: 0},
+      {z: 1, f: -2, x: 0, y: 0},
+      {z: 1, f: 2, x: 0, y: 0},
       {z: 1, f: 3, x: 0, y: 0},
       {z: 36, f: 0, x: 0, y: 0},
     ])('rejects an invalid object %#', (input) => {
@@ -248,6 +251,15 @@ describe('Space', () => {
       const south = new Space('/3/0/0/7');
       expect(north.north(10).zfxy.y).toBe(0);
       expect(south.south(10).zfxy.y).toBe(7);
+    });
+
+    it.each([-7, 7])('deduplicates neighbors at altitude index %i', (f) => {
+      const space = new Space({z: 3, f, x: 4, y: 4});
+      const surroundings = space.surroundings().map(({zfxyStr}) => zfxyStr);
+      expect(surroundings).toHaveLength(17);
+      expect(new Set(surroundings).size).toBe(17);
+      expect(surroundings).not.toContain(space.zfxyStr);
+      expect(f < 0 ? space.down().zfxy : space.up().zfxy).toStrictEqual(space.zfxy);
     });
   });
 

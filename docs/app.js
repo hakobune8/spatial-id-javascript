@@ -4,7 +4,7 @@
   const DEFAULT_ALT = 0;
   const DEFAULT_ZOOM = 20;
 
-  const MIN_ALT = -33554432;
+  const ROOT_MIN_ALT = -33554432;
   const MAX_ALT = 33554432;
   const MIN_LAT = -85.05112878;
   const MAX_LAT = 85.05112878;
@@ -21,7 +21,7 @@
       mapMissing: "地図ライブラリが読み込めていません。",
       invalidLat: `緯度は ${MIN_LAT} ～ ${MAX_LAT} の範囲で入力してください。`,
       invalidLng: `経度は ${MIN_LNG} ～ ${MAX_LNG} の範囲で入力してください。`,
-      invalidAlt: `標高は ${MIN_ALT} ～ ${MAX_ALT} m の範囲で入力してください。`,
+      invalidAlt: min => `標高は ${min} m以上、${MAX_ALT} m未満で入力してください。`,
       invalidZoom: `ズームレベルは ${MIN_Z} ～ ${MAX_Z} の整数で入力してください。`,
       calcError: "計算中にエラーが発生しました。"
     },
@@ -30,7 +30,7 @@
       mapMissing: "Map library is not loaded.",
       invalidLat: `Latitude must be between ${MIN_LAT} and ${MAX_LAT}.`,
       invalidLng: `Longitude must be between ${MIN_LNG} and ${MAX_LNG}.`,
-      invalidAlt: `Altitude must be between ${MIN_ALT} and ${MAX_ALT} meters.`,
+      invalidAlt: min => `Altitude must be at least ${min} and less than ${MAX_ALT} meters.`,
       invalidZoom: `Zoom level must be an integer between ${MIN_Z} and ${MAX_Z}.`,
       calcError: "An error occurred during calculation."
     }
@@ -146,6 +146,10 @@
       return Number.isFinite(value) && value >= min && value <= max;
     }
 
+    function minimumAltitude(z) {
+      return ROOT_MIN_ALT + (MAX_ALT / (2 ** z));
+    }
+
     function validateInputs() {
       const lat = toNumber(latEl);
       const lng = toNumber(lngEl);
@@ -153,19 +157,20 @@
       const z = toNumber(zEl);
 
       if (!isInRange(lat, MIN_LAT, MAX_LAT)) {
-        return { ok: false, message: messages[currentLang].invalidLat };
+        return { ok: false, field: "lat", message: messages[currentLang].invalidLat };
       }
 
       if (!isInRange(lng, MIN_LNG, MAX_LNG)) {
-        return { ok: false, message: messages[currentLang].invalidLng };
-      }
-
-      if (!isInRange(alt, MIN_ALT, MAX_ALT)) {
-        return { ok: false, message: messages[currentLang].invalidAlt };
+        return { ok: false, field: "lng", message: messages[currentLang].invalidLng };
       }
 
       if (!Number.isInteger(z) || !isInRange(z, MIN_Z, MAX_Z)) {
-        return { ok: false, message: messages[currentLang].invalidZoom };
+        return { ok: false, field: "zoom", message: messages[currentLang].invalidZoom };
+      }
+
+      const minAlt = minimumAltitude(z);
+      if (!Number.isFinite(alt) || alt < minAlt || alt >= MAX_ALT) {
+        return { ok: false, field: "alt", message: messages[currentLang].invalidAlt(minAlt) };
       }
 
       return { ok: true, lat, lng, alt, z };
@@ -179,19 +184,19 @@
 
       if (state.ok) return;
 
-      if (state.message === messages[currentLang].invalidLat) {
+      if (state.field === "lat") {
         latEl.setCustomValidity(state.message);
       }
 
-      if (state.message === messages[currentLang].invalidLng) {
+      if (state.field === "lng") {
         lngEl.setCustomValidity(state.message);
       }
 
-      if (state.message === messages[currentLang].invalidAlt) {
+      if (state.field === "alt") {
         hEl.setCustomValidity(state.message);
       }
 
-      if (state.message === messages[currentLang].invalidZoom) {
+      if (state.field === "zoom") {
         zEl.setCustomValidity(state.message);
       }
     }
