@@ -6,6 +6,8 @@ import turfBooleanIntersects from '@turf/boolean-intersects';
 import type { Geometry, Polygon } from "geojson";
 import { bboxToTile, pointToTile } from "./tilebelt";
 
+export { MIN_ALTITUDE, MAX_ALTITUDE, ZFXY_ALTITUDE_LIMIT } from "./zfxy";
+
 const DEFAULT_ZOOM = 25 as const;
 
 export class Space {

@@ -1,6 +1,27 @@
 import * as zfxy from "../src/zfxy";
 
 describe('zfxy', () => {
+  describe('calculateZFXY altitude range', () => {
+    it.each([
+      zfxy.MIN_ALTITUDE,
+      zfxy.MAX_ALTITUDE,
+      zfxy.MIN_ALTITUDE - 1,
+      zfxy.MAX_ALTITUDE + 1,
+    ])('rejects altitude outside the ZFXY root voxel: %s', (alt) => {
+      expect(() => zfxy.calculateZFXY({lng: 0, lat: 0, alt, zoom: 25})).toThrow(
+        'ZFXY root voxel'
+      );
+    });
+
+    it.each([
+      zfxy.MIN_ALTITUDE + 1,
+      0,
+      zfxy.MAX_ALTITUDE - 1,
+    ])('accepts altitude inside the ZFXY root voxel: %s', (alt) => {
+      expect(() => zfxy.calculateZFXY({lng: 0, lat: 0, alt, zoom: 25})).not.toThrow();
+    });
+  });
+
   describe('getParent', () => {
     it.each([0, -1, 1.5, Number.NaN])('rejects invalid steps: %s', (steps) => {
       expect(() => zfxy.getParent({z: 2, f: 0, x: 0, y: 0}, steps)).toThrow(
