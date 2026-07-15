@@ -1,5 +1,5 @@
 import { LngLatWithAltitude } from "./types";
-import { calculateZFXY, getBBox, getChildren, getFloor, getParent, isZFXYTile, parseZFXYString, ZFXYTile, zfxyWraparound, getSurrounding, getCenterLngLatAlt } from "./zfxy";
+import { calculateZFXY, getBBox, getChildren, getFloor, getParent, isZFXYTile, parseZFXYString, ZFXYTile, zfxyWraparound, getSurrounding, getCenterLngLatAlt, MAX_ZOOM, MIN_ZOOM } from "./zfxy";
 import { generateTilehash, parseZFXYTilehash } from "./zfxy_tilehash";
 import turfBBox from '@turf/bbox';
 import turfBooleanIntersects from '@turf/boolean-intersects';
@@ -190,9 +190,15 @@ export class Space {
     return new Space(zfxyStr);
   }
 
-  /** Calculates the smallest spatial ID to fully contain the polygon. Currently only supports 2D polygons. */
+  /** Calculates the smallest spatial ID to fully contain the polygon. Currently only
+   * supports 2D polygons. `minZoom` is retained for API compatibility and specifies
+   * the maximum zoom level to inspect (a lower value forces a coarser result).
+   */
   static boundingSpaceForGeometry(geom: Geometry, minZoom?: number): Space {
-    minZoom = minZoom || 25;
+    minZoom = minZoom ?? DEFAULT_ZOOM;
+    if (!Number.isSafeInteger(minZoom) || minZoom < MIN_ZOOM || minZoom > MAX_ZOOM) {
+      throw new Error(`minZoom must be an integer between ${MIN_ZOOM} and ${MAX_ZOOM}.`);
+    }
     const bbox = turfBBox(geom);
     const largestTile = bboxToTile(bbox, minZoom);
     const [ x, y, z ] = largestTile;
@@ -202,6 +208,10 @@ export class Space {
   /** Calculate an array of spaces that make up the polygon. Currently only supports 2D polygons. */
   static spacesForGeometry(geom: Geometry, zoom: number): Space[] {
     const z = zoom;
+
+    if (!Number.isSafeInteger(z) || z < MIN_ZOOM || z > MAX_ZOOM) {
+      throw new Error(`zoom must be an integer between ${MIN_ZOOM} and ${MAX_ZOOM}.`);
+    }
 
     if (z === 0) {
       // not recommended.
@@ -214,12 +224,12 @@ export class Space {
 
     // this can be optimized a lot!
     const bbox = turfBBox(geom),
-          min = pointToTile(bbox[0], bbox[1], 32),
-          max = pointToTile(bbox[2], bbox[3], 32),
-          minX = (Math.min(min[0], max[0])) >>> (32 - z),
-          minY = (Math.min(min[1], max[1])) >>> (32 - z),
-          maxX = (Math.max(max[0], min[0]) >>> (32 - z)) + 1,
-          maxY = (Math.max(max[1], min[1]) >>> (32 - z)) + 1,
+          min = pointToTile(bbox[0], bbox[1], z),
+          max = pointToTile(bbox[2], bbox[3], z),
+          minX = Math.min(min[0], max[0]),
+          minY = Math.min(min[1], max[1]),
+          maxX = Math.max(max[0], min[0]),
+          maxY = Math.max(max[1], min[1]),
           spaces: Space[] = [];
 
     // scanline polygon fill algorithm

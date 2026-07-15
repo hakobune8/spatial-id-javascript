@@ -309,6 +309,24 @@ const testPolygons: { [key: string]: Polygon } = {
   DETAILED: {"coordinates":[[[139.73132532824928,35.66657408663923],[139.7308657092451,35.66613900145083],[139.73099702895985,35.66602897953335],[139.73108320752306,35.666103994493525],[139.7309847177366,35.666184010373385],[139.7312986539318,35.666487403189706],[139.7314894778924,35.66635737783834],[139.7310544813364,35.665987304525416],[139.73134174321268,35.665758925093],[139.73141561055252,35.66583560731111],[139.73118169730958,35.66599897352954],[139.73124940903864,35.66605398452789],[139.73146280357656,35.66589061842207],[139.73154487839815,35.665950630499836],[139.73131506889678,35.66610232749561],[139.73142586990656,35.666199013341924],[139.73170287243033,35.66614900343582],[139.7315941232913,35.66622901927059],[139.73171107991362,35.66633403993197],[139.73132532824928,35.66657408663923]]],"type":"Polygon"},
 };
 
+function polygonInsideTile(tile: Space): Polygon {
+  const ring = tile.toGeoJSON().coordinates[0];
+  const [west, north] = ring[0];
+  const [east, south] = ring[2];
+  const lngInset = (east - west) / 4;
+  const latInset = (north - south) / 4;
+  return {
+    type: 'Polygon',
+    coordinates: [[
+      [west + lngInset, north - latInset],
+      [west + lngInset, south + latInset],
+      [east - lngInset, south + latInset],
+      [east - lngInset, north - latInset],
+      [west + lngInset, north - latInset],
+    ]],
+  };
+}
+
 describe('boundingSpaceForGeometry', () => {
   it('automatically detects the smallest tile that contains the polygon', () => {
     const space = Space.boundingSpaceForGeometry(testPolygons.SIMPLE);
@@ -318,6 +336,19 @@ describe('boundingSpaceForGeometry', () => {
   it('respects the minimum zoom level', () => {
     const space = Space.boundingSpaceForGeometry(testPolygons.SIMPLE, 8);
     expect(space.zfxy).toStrictEqual({z: 8, f: 0, x: 227, y: 100});
+  });
+
+  it.each([0, 29, 32, 35])('supports an explicit zoom limit of %i', (zoom) => {
+    const tile = new Space({lng: 139.747, lat: 35.73, alt: 0}, 35);
+    const space = Space.boundingSpaceForGeometry(polygonInsideTile(tile), zoom);
+    expect(space.zoom).toBe(zoom);
+    if (zoom === 35) expect(space.zfxy).toStrictEqual(tile.zfxy);
+  });
+
+  it.each([-1, 1.5, 36])('rejects an invalid zoom limit: %s', (zoom) => {
+    expect(() => Space.boundingSpaceForGeometry(testPolygons.SIMPLE, zoom)).toThrow(
+      'minZoom must be an integer'
+    );
   });
 });
 
@@ -346,5 +377,17 @@ describe('spacesForGeometry', () => {
       { f: 0,    x: 931286,    y: 412959,    z: 20,  },
       { f: 0,    x: 931286,    y: 412960,    z: 20,  },
     ]);
+  });
+
+  it('returns the containing tile at zoom 35', () => {
+    const tile = new Space({lng: 139.747, lat: 35.73, alt: 0}, 35);
+    const spaces = Space.spacesForGeometry(polygonInsideTile(tile), 35);
+    expect(spaces.map(({zfxy}) => zfxy)).toStrictEqual([tile.zfxy]);
+  });
+
+  it.each([-1, 1.5, 36])('rejects an invalid zoom: %s', (zoom) => {
+    expect(() => Space.spacesForGeometry(testPolygons.SIMPLE, zoom)).toThrow(
+      'zoom must be an integer'
+    );
   });
 });
