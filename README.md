@@ -89,22 +89,32 @@ Space.spacesForGeometry( geometry, zoom, options? )
 * 現在の空間オブジェクトが表現している ZFXY を URL のパス型に変換したもの
 #### `.up(by?: number)`
 ![up](https://user-images.githubusercontent.com/309946/168220328-47e09300-c4dc-4ad1-adae-2cb17aff23ab.png)
-* パラメータがない場合は、現在の空間オブジェクトのひとつ上の空間オブジェクトを返す
-* パラメータが指定されている場合は、その個数分の空間オブジェクトを配列で返す
+* `f` の正方向（上）へ `by` セル移動した、新しい単一の `Space` を返します。`by` は返却件数ではなく移動量で、省略時は `1` です。
 #### `.down(by?: number)`
 ![down](https://user-images.githubusercontent.com/309946/168220818-f89a73b1-b99c-462d-9fcb-5eae0eac03eb.png)
-* パラメータがない場合は現在の空間オブジェクトのひとつ下の空間オブジェクトを返す
-* パラメータが指定されている場合は、その個数分の空間オブジェクトを配列で返す
-#### `.north(by?: number), .east(by?: number), south(by?: number), .west(by?: number)`
+* `f` の負方向（下）へ `by` セル移動した、新しい単一の `Space` を返します。`by` は返却件数ではなく移動量で、省略時は `1` です。
+#### `.north(by?: number), .east(by?: number), .south(by?: number), .west(by?: number)`
 ![north](https://user-images.githubusercontent.com/309946/168221234-b03809ef-6c69-442b-98d3-583b4391108e.png)
-* パラメータがない場合は、現在の空間オブジェクトの隣のオブジェクトを返す
-* パラメータが指定されている場合は、その個数分の空間オブジェクトを配列で返す
+* 指定方向へ `by` セル移動した、新しい単一の `Space` を返します。`by` は返却件数ではなく移動量で、省略時は `1` です。
+* タイル座標では北が `y` の負方向、南が `y` の正方向、東が `x` の正方向、西が `x` の負方向です。
+* 負の `by` は反対方向への移動として扱います。Xは日付変更線で周回し、YはWeb Mercatorの北端・南端でクランプされます。
 #### `.move(by: Partial<Omit<ZFXYTile, 'z'>>)`
-* 現在の空間オブジェクトから相対的な新しいオブジェクトを返す。 `by` は少なくとも `x, y, f` の一つ以上を含めてください
+* 現在の空間オブジェクトから `x`、`y`、`f` の相対移動量を適用した、新しい単一の `Space` を返します。正のXは東、正のYは南、正のFは上です。
+* Xはズームレベルの範囲で周回し、YとFは表現可能な範囲でクランプされます。
+
+```ts
+const space = new Space('/5/3/10/12');
+
+space.up(2).zfxy;    // { z: 5, f: 5, x: 10, y: 12 }
+space.down(2).zfxy;  // { z: 5, f: 1, x: 10, y: 12 }
+space.north(2).zfxy; // { z: 5, f: 3, x: 10, y: 10 }
+space.south(2).zfxy; // { z: 5, f: 3, x: 10, y: 14 }
+space.east(2).zfxy;  // { z: 5, f: 3, x: 12, y: 12 }
+space.west(2).zfxy;  // { z: 5, f: 3, x: 8, y: 12 }
+
+space.move({x: 1, y: 5, f: -1}).zfxy;
+// { z: 5, f: 2, x: 11, y: 17 }（東1、南5、下1セル）
 ```
-space.move({x: 1, y: 5, f: -1})
-```
-上記の例の場合では、返り値は西1マス、北5マス、下1マスにある空間オブジェクト
 #### `.surroundings()`
 ![surroundings](https://user-images.githubusercontent.com/309946/168221371-b1ec30c7-f501-4a6b-ad64-5a6345fb9665.png)
 * 現在の空間オブジェクトのまわりにあるすべての空間オブジェクトを配列で返す。
