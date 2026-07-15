@@ -3,11 +3,28 @@ import { LngLat, LngLatWithAltitude } from "./types";
 export type ZFXYTile = { z: number, f: number, x: number, y: number };
 
 export function isZFXYTile(tile: any): tile is ZFXYTile {
-  return ('z' in tile && 'f' in tile && 'x' in tile && 'y' in tile);
+  if (typeof tile !== 'object' || tile === null) return false;
+
+  const {z, f, x, y} = tile;
+  if (![z, f, x, y].every(Number.isSafeInteger)) return false;
+  if (z < MIN_ZOOM || z > MAX_ZOOM) return false;
+
+  const axisSize = 2 ** z;
+  return (
+    x >= 0 && x < axisSize &&
+    y >= 0 && y < axisSize &&
+    f >= -axisSize && f <= axisSize
+  );
 }
 
 export const ZFXY_1M_ZOOM_BASE = 25 as const;
 export const ZFXY_ROOT_TILE: ZFXYTile = { f: 0, x: 0, y: 0, z: 0 };
+export const MIN_ZOOM = 0 as const;
+export const MAX_ZOOM = 35 as const;
+export const MIN_LATITUDE = -85.0511287798 as const;
+export const MAX_LATITUDE = 85.0511287798 as const;
+export const MIN_LONGITUDE = -180 as const;
+export const MAX_LONGITUDE = 180 as const;
 
 const rad2deg = 180 / Math.PI;
 
@@ -61,12 +78,13 @@ export function parseZFXYString(str: string): ZFXYTile | undefined {
   if (!match) {
     return undefined;
   }
-  return {
+  const tile = {
     z: parseInt(match[1], 10),
     f: parseInt(match[2] || '0', 10),
     x: parseInt(match[3], 10),
     y: parseInt(match[4], 10),
   };
+  return isZFXYTile(tile) ? tile : undefined;
 }
 
 /** Returns the lng,lat of the northwest corner of the provided tile */
@@ -111,7 +129,20 @@ export interface CalculateZFXYInput {
 }
 
 export function calculateZFXY(input: CalculateZFXYInput): ZFXYTile {
+  if (!Number.isFinite(input.lat) || input.lat < MIN_LATITUDE || input.lat > MAX_LATITUDE) {
+    throw new Error(`Latitude must be a finite number between ${MIN_LATITUDE} and ${MAX_LATITUDE}.`);
+  }
+  if (!Number.isFinite(input.lng) || input.lng < MIN_LONGITUDE || input.lng > MAX_LONGITUDE) {
+    throw new Error(`Longitude must be a finite number between ${MIN_LONGITUDE} and ${MAX_LONGITUDE}.`);
+  }
+  if (!Number.isSafeInteger(input.zoom) || input.zoom < MIN_ZOOM || input.zoom > MAX_ZOOM) {
+    throw new Error(`Zoom must be an integer between ${MIN_ZOOM} and ${MAX_ZOOM}.`);
+  }
+
   const meters = typeof input.alt !== 'undefined' ? input.alt : 0;
+  if (!Number.isFinite(meters)) {
+    throw new Error('Altitude must be a finite number.');
+  }
   if (meters <= -(2**ZFXY_1M_ZOOM_BASE) || meters >= (2**ZFXY_1M_ZOOM_BASE)) {
     // TODO: make altitude unlimited?
     throw new Error(`ZFXY only supports altitude between -2^${ZFXY_1M_ZOOM_BASE} and +2^${ZFXY_1M_ZOOM_BASE}.`);

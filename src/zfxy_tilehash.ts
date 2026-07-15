@@ -1,21 +1,28 @@
-import { ZFXYTile, getChildren, getParent } from "./zfxy";
+import { MAX_ZOOM, ZFXYTile, getChildren, getParent, isZFXYTile } from "./zfxy";
 
-export function parseZFXYTilehash(th: string): ZFXYTile {
+export function parseZFXYTilehash(th: string): ZFXYTile | undefined {
+  if (!/^-?[1-8]+$/.test(th)) return undefined;
+
   let negativeF = false;
   if (th[0] === '-') {
     negativeF = true;
     th = th.substring(1);
   }
+  if (th.length > MAX_ZOOM) return undefined;
   let children = getChildren();
-  let lastChild: ZFXYTile;
+  let lastChild: ZFXYTile | undefined;
   for (const c of th) {
-    lastChild = {...children[parseInt(c, 10) - 1]};
+    const child = children[parseInt(c, 10) - 1];
+    if (!child) return undefined;
+    lastChild = {...child};
     children = getChildren(lastChild);
   }
+  if (!lastChild) return undefined;
+  if (negativeF && lastChild.f === 0) return undefined;
   if (negativeF) {
     lastChild.f = -lastChild.f;
   }
-  return lastChild;
+  return isZFXYTile(lastChild) ? lastChild : undefined;
 }
 
 export function generateTilehash(tile: ZFXYTile): string {
