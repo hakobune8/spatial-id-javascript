@@ -41,6 +41,12 @@ export class Space {
       this._regenerateAttributesFromZFXY();
       return;
     } else {
+      if (
+        typeof input !== 'object' || input === null ||
+        !('lng' in input) || !('lat' in input)
+      ) {
+        throw new Error('Input must be a valid lng/lat location, ZFXY tile, or encoded string.');
+      }
       this.zfxy = calculateZFXY({
         ...input,
         zoom: (typeof zoom !== 'undefined') ? zoom : DEFAULT_ZOOM,

@@ -9,6 +9,49 @@ describe('Space', () => {
     expect(space.tilehash).toStrictEqual('4111111111111111111115151');
   });
 
+  describe('input validation', () => {
+    it.each([
+      [{lng: 0, lat: 90, alt: 0}, 25, 'Latitude'],
+      [{lng: 181, lat: 0, alt: 0}, 25, 'Longitude'],
+      [{lng: 0, lat: 0, alt: Number.NaN}, 25, 'Altitude'],
+      [{lng: 0, lat: 0, alt: 0}, -1, 'Zoom'],
+      [{lng: 0, lat: 0, alt: 0}, 1.5, 'Zoom'],
+      [{lng: 0, lat: 0, alt: 0}, 36, 'Zoom'],
+    ])('rejects an invalid location %#', (input, zoom, message) => {
+      expect(() => new Space(input, zoom)).toThrow(message as string);
+    });
+
+    it.each([
+      '',
+      'abc',
+      '9',
+      '-9',
+      '-1',
+      '1'.repeat(36),
+      '1/0/2/0',
+      '36/0/0/0',
+    ])('rejects an invalid encoded string: %s', (input) => {
+      expect(() => new Space(input)).toThrow('parse ZFXY failed');
+    });
+
+    it.each([
+      null,
+      {z: 1, f: 0, x: 2, y: 0},
+      {z: 1, f: 0, x: 0.5, y: 0},
+      {z: 1, f: 3, x: 0, y: 0},
+      {z: 36, f: 0, x: 0, y: 0},
+    ])('rejects an invalid object %#', (input) => {
+      expect(() => new Space(input as any)).toThrow();
+    });
+
+    it.each([
+      {lng: -180, lat: -85.0511287798, alt: 0},
+      {lng: 180, lat: 85.0511287798, alt: 0},
+    ])('accepts a documented coordinate boundary: %#', (input) => {
+      expect(() => new Space(input, 25)).not.toThrow();
+    });
+  });
+
   it('works', () => {
     const space = new Space('1/0/0/0');
     expect(space.zfxy).toStrictEqual({z: 1, f: 0, x: 0, y: 0});
