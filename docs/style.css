@@ -216,8 +216,8 @@ input[type="number"] {
 
 .result-card {
   display: grid;
-  align-items: center;
-  gap: 12px;
+  align-content: start;
+  gap: 20px;
   background: var(--accent-bg);
   border: 1px solid var(--accent-border);
   border-radius: 16px;
@@ -248,6 +248,142 @@ input[type="number"] {
   font-weight: 800;
   line-height: 1.45;
   color: #111827;
+}
+
+.altitude-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.altitude-values > div {
+  min-width: 0;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+}
+
+.altitude-values dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.altitude-values dd {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.height-profile {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--accent-border);
+  border-radius: 14px;
+}
+
+.height-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.height-profile h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.voxel-thickness {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.profile-scale {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: auto 128px auto;
+  column-gap: 12px;
+  align-items: center;
+}
+
+.profile-endpoint {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.profile-endpoint:first-child {
+  grid-row: 1;
+}
+
+.profile-endpoint:last-child {
+  grid-row: 3;
+}
+
+.voxel-bar {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1 / 4;
+  height: 156px;
+  margin-right: 92px;
+  background: linear-gradient(180deg, #dbe8ff, #eef4ff);
+  border: 2px solid var(--primary);
+  border-radius: 10px;
+}
+
+.center-line {
+  position: absolute;
+  inset: 50% 0 auto;
+  border-top: 1px dashed rgba(36, 87, 214, 0.7);
+}
+
+.input-alt-marker {
+  --input-position: 0%;
+  position: absolute;
+  left: -7px;
+  right: -7px;
+  bottom: var(--input-position);
+  border-top: 3px solid #d83a56;
+  transform: translateY(50%);
+  transition: bottom 180ms ease-out;
+}
+
+.input-alt-marker::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: -7px;
+  width: 11px;
+  height: 11px;
+  background: #d83a56;
+  border-radius: 50%;
+}
+
+.input-alt-label {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 0;
+  width: 90px;
+  color: #a51f39;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.25;
+  transform: translateY(-50%);
+}
+
+.map-height-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
 }
 
 .map-panel {
@@ -411,6 +547,14 @@ input[type="number"] {
 
   .result-value {
     font-size: 1.2rem;
+  }
+
+  .altitude-values {
+    grid-template-columns: 1fr;
+  }
+
+  .voxel-bar {
+    margin-right: 82px;
   }
 
   .map {
