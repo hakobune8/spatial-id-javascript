@@ -52,6 +52,32 @@ describe('Space', () => {
     });
   });
 
+  describe('cardinal direction movement', () => {
+    const origin = new Space({lng: 139.747, lat: 35.73, alt: 0}, 20);
+
+    it('moves north toward a higher latitude', () => {
+      const north = origin.north();
+      expect(north.zfxy.y).toBe(origin.zfxy.y - 1);
+      expect(north.center.lat).toBeGreaterThan(origin.center.lat);
+    });
+
+    it('moves south toward a lower latitude', () => {
+      const south = origin.south();
+      expect(south.zfxy.y).toBe(origin.zfxy.y + 1);
+      expect(south.center.lat).toBeLessThan(origin.center.lat);
+    });
+
+    it('moves by the requested number of cells', () => {
+      expect(origin.north(3).zfxy.y).toBe(origin.zfxy.y - 3);
+      expect(origin.south(3).zfxy.y).toBe(origin.zfxy.y + 3);
+    });
+
+    it('treats a negative distance as movement in the opposite direction', () => {
+      expect(origin.north(-2).zfxy).toStrictEqual(origin.south(2).zfxy);
+      expect(origin.south(-2).zfxy).toStrictEqual(origin.north(2).zfxy);
+    });
+  });
+
   it('works', () => {
     const space = new Space('1/0/0/0');
     expect(space.zfxy).toStrictEqual({z: 1, f: 0, x: 0, y: 0});
