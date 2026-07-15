@@ -1,33 +1,34 @@
 import { BBox } from "geojson";
+import { MAX_ZOOM } from "./zfxy";
 
-const d2r = Math.PI / 180,
-      r2d = 180 / Math.PI,
-      MAX_ZOOM = 28;
+const d2r = Math.PI / 180;
 
-export function getBboxZoom(bbox: BBox) {
-  for (let z = 0; z < MAX_ZOOM; z++) {
-    const mask = 1 << (32 - (z + 1));
-    if (((bbox[0] & mask) !== (bbox[2] & mask)) ||
-        ((bbox[1] & mask) !== (bbox[3] & mask))) {
-      return z;
-    }
+export function getBboxZoom(bbox: BBox, sourceZoom: number = MAX_ZOOM) {
+  for (let z = sourceZoom; z >= 0; z--) {
+    const divisor = 2 ** (sourceZoom - z);
+    const minX = Math.floor(bbox[0] / divisor);
+    const minY = Math.floor(bbox[1] / divisor);
+    const maxX = Math.floor(bbox[2] / divisor);
+    const maxY = Math.floor(bbox[3] / divisor);
+    if (minX === maxX && minY === maxY) return z;
   }
-
-  return MAX_ZOOM;
+  return 0;
 }
 
 /**
  * Get the smallest tile to cover a bbox
  */
 export function bboxToTile(bboxCoords: BBox, minZoom?: number): Array<number> {
-  const min = pointToTile(bboxCoords[0], bboxCoords[1], 32);
-  const max = pointToTile(bboxCoords[2], bboxCoords[3], 32);
+  const maxZoom = typeof minZoom !== 'undefined' ? minZoom : MAX_ZOOM;
+  const min = pointToTile(bboxCoords[0], bboxCoords[1], maxZoom);
+  const max = pointToTile(bboxCoords[2], bboxCoords[3], maxZoom);
   const bbox: BBox = [min[0], min[1], max[0], max[1]];
 
-  const z = Math.min(getBboxZoom(bbox), typeof minZoom !== 'undefined' ? minZoom : MAX_ZOOM);
+  const z = getBboxZoom(bbox, maxZoom);
   if (z === 0) return [0, 0, 0];
-  const x = bbox[0] >>> (32 - z);
-  const y = bbox[1] >>> (32 - z);
+  const divisor = 2 ** (maxZoom - z);
+  const x = Math.floor(bbox[0] / divisor);
+  const y = Math.floor(bbox[1] / divisor);
   return [x, y, z];
 }
 
