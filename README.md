@@ -2,7 +2,7 @@
 ![Voxel_Image](voxel_image.png)
 
 > [!NOTE]
-> このパッケージは [ODS-IS-STID/ouranos-gex-lib-for-JavaScript](https://github.com/ODS-IS-STID/ouranos-gex-lib-for-JavaScript) の非公式forkです。元実装との互換性を維持しながら、npm向けの配布設定と依存関係を修正しています。
+> このパッケージは [ODS-IS-STID/ouranos-gex-lib-for-JavaScript](https://github.com/ODS-IS-STID/ouranos-gex-lib-for-JavaScript) の非公式forkです。元実装との互換性を維持しながら、npm配布対応と各種不具合修正・機能改善を行っています。
 
 ## 概要
 - 任意の座標を空間IDに変換するライブラリです。
@@ -12,50 +12,28 @@
 
 ## 共通ライブラリ利用方法
 1. npmインストール
-```
-npm install @hakobune8/spatial-id-javascript
-```
-1. モジュールのロード
-```js
-import { Space } from '@hakobune8/spatial-id-javascript'
-```
 
-CommonJSからも利用できます。
+   ```sh
+   npm install @hakobune8/spatial-id-javascript
+   ```
 
-```js
-const { Space } = require('@hakobune8/spatial-id-javascript');
-```
+2. モジュールのロード
+
+   ```js
+   import { Space } from '@hakobune8/spatial-id-javascript';
+   ```
+
+   CommonJSからも利用できます。
+
+   ```js
+   const { Space } = require('@hakobune8/spatial-id-javascript');
+   ```
 
 ## 注意事項
 * ライブラリの入力可能な緯度の最大、最小値は「±85.0511287798」とします。
 * 精度レベルの指定範囲は、0から35とします。
 * 経度の限界値は±180ですが、180と-180は同じ個所を指すこととZFXY形式のインデックスの考え方により、180はライブラリ内部では-180として扱われます。(180の入力は可能とします。)
 * 座標から変換できる最大高度は `alt < 33,554,432` mです。最小高度はズームごとに `-33,554,432 + 33,554,432 / 2^zoom` m（端点を含む）となり、`getMinimumAltitude(zoom)` で取得できます。この範囲はZFXYのルートボクセルおよびtilehashの階層表現によるものです。
-
-## 問合せ及び要望に関して
-
-### Issue
-
-本forkの不具合、文書の誤り、機能提案は[GitHub Issues](https://github.com/hakobune8/spatial-id-javascript/issues/new)で受け付けています。調査できるよう、可能な範囲で次の情報を記載してください。
-
-- 使用しているパッケージのバージョン
-- Node.jsまたはブラウザの種類とバージョン
-- 問題を再現できる最小限のコード、入力値、期待する結果、実際の結果
-- エラーメッセージやスタックトレース
-
-本リポジトリで提供するライブラリと文書がサポート対象です。空間ID仕様そのものに関する判断、個別システムへの導入支援、元実装に固有の問題には回答できない場合があります。Issueへの返信、調査、修正、対応時期は保証していません。公開Issueには認証情報、個人情報、非公開の座標やデータを記載しないでください。
-
-### Pull Request
-
-[Pull Request](https://github.com/hakobune8/spatial-id-javascript/pulls)も受け付けています。大きな仕様変更や新機能は、実装前にIssueで目的と方針をご相談ください。変更理由、関連Issue、確認方法をPR本文に記載し、既存テストを通したうえで必要なテストを追加してください。レビューやマージを保証するものではありません。
-
-## ライセンス
-- 本リポジトリはMITライセンスで提供されています。
-- ソースコードおよび関連ドキュメントの著作権は株式会社Geoloniaに帰属します。
-
-## 免責事項
-- 本リポジトリの内容は予告なく変更・削除する可能性があります。
-- 本リポジトリの利用により生じた損失及び損害等について、いかなる責任も負わないものとします。
 
 ## 詳細仕様
 
