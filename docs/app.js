@@ -48,6 +48,15 @@
       zoomLabel: "ズームレベル",
       resultTitle: "出力",
       resultLabel: "空間ID",
+      floorLabel: "床高度",
+      centerAltLabel: "中心高度",
+      ceilLabel: "天井高度",
+      heightProfileLabel: "鉛直スケール",
+      floorShortLabel: "床",
+      ceilShortLabel: "天井",
+      thicknessLabel: "厚み",
+      inputAltLabel: "入力",
+      mapHeightNote: "地図は水平範囲のみを表示します。高さはこの鉛直スケールで確認してください。",
       mapTitle: "地図",
       mapHelp: "地図をクリックすると緯度・経度欄に反映されます。",
       linksTitle: "関連情報",
@@ -67,6 +76,15 @@
       zoomLabel: "Zoom level",
       resultTitle: "Output",
       resultLabel: "Spatial ID",
+      floorLabel: "Floor altitude",
+      centerAltLabel: "Center altitude",
+      ceilLabel: "Ceiling altitude",
+      heightProfileLabel: "Vertical scale",
+      floorShortLabel: "Floor",
+      ceilShortLabel: "Ceiling",
+      thicknessLabel: "Thickness",
+      inputAltLabel: "Input",
+      mapHeightNote: "The map shows only the horizontal extent. Use this vertical scale to inspect height.",
       mapTitle: "Map",
       mapHelp: "Click the map to update latitude and longitude.",
       linksTitle: "Related links",
@@ -103,6 +121,12 @@
     const hEl = $("h");
     const zEl = $("z");
     const zfxyEl = $("zfxy");
+    const floorAltEl = $("floor-alt");
+    const centerAltEl = $("center-alt");
+    const ceilAltEl = $("ceil-alt");
+    const voxelThicknessEl = $("voxel-thickness");
+    const inputAltMarkerEl = $("input-alt-marker");
+    const inputAltLabelEl = $("input-alt-label");
     const langSelect = $("lang-select");
 
     let currentLang = "ja";
@@ -236,12 +260,54 @@
       };
     }
 
-    function updateOutput(space) {
+    function formatAltitude(value) {
+      if (!Number.isFinite(value)) return "-";
+      return `${new Intl.NumberFormat(currentLang, {
+        maximumFractionDigits: 2
+      }).format(value)} m`;
+    }
+
+    function getAltitudeRange(space) {
+      const floor = Number(space.alt);
+      const center = Number(space.center && space.center.alt);
+      let ceil = NaN;
+
+      if (typeof space.vertices3d === "function") {
+        const altitudes = space.vertices3d().map(vertex => Number(vertex[2]));
+        ceil = Math.max(...altitudes);
+      }
+
+      if (!Number.isFinite(ceil) && Number.isFinite(floor) && Number.isFinite(center)) {
+        ceil = center + (center - floor);
+      }
+
+      return { floor, center, ceil };
+    }
+
+    function updateOutput(space, input) {
       zfxyEl.textContent = getZfxyString(space);
+      const range = getAltitudeRange(space);
+      const thickness = range.ceil - range.floor;
+      const position = thickness > 0
+        ? Math.min(100, Math.max(0, ((input.alt - range.floor) / thickness) * 100))
+        : 0;
+
+      floorAltEl.textContent = formatAltitude(range.floor);
+      centerAltEl.textContent = formatAltitude(range.center);
+      ceilAltEl.textContent = formatAltitude(range.ceil);
+      voxelThicknessEl.textContent = `${translations[currentLang].thicknessLabel}: ${formatAltitude(thickness)}`;
+      inputAltMarkerEl.style.setProperty("--input-position", `${position}%`);
+      inputAltLabelEl.textContent = `${translations[currentLang].inputAltLabel}: ${formatAltitude(input.alt)}`;
     }
 
     function resetOutput() {
       zfxyEl.textContent = "-";
+      floorAltEl.textContent = "-";
+      centerAltEl.textContent = "-";
+      ceilAltEl.textContent = "-";
+      voxelThicknessEl.textContent = "-";
+      inputAltMarkerEl.style.setProperty("--input-position", "0%");
+      inputAltLabelEl.textContent = "-";
       clearDrawings();
     }
 
@@ -304,7 +370,7 @@
           state.z
         );
 
-        updateOutput(space);
+        updateOutput(space, state);
         draw(space, state);
         msgEl.textContent = "";
       } catch (error) {

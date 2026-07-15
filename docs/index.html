@@ -112,6 +112,41 @@
               <div class="result-label" data-i18n="resultLabel">空間ID</div>
               <code id="zfxy" class="result-value">-</code>
             </div>
+
+            <dl class="altitude-values">
+              <div>
+                <dt data-i18n="floorLabel">床高度</dt>
+                <dd id="floor-alt">-</dd>
+              </div>
+              <div>
+                <dt data-i18n="centerAltLabel">中心高度</dt>
+                <dd id="center-alt">-</dd>
+              </div>
+              <div>
+                <dt data-i18n="ceilLabel">天井高度</dt>
+                <dd id="ceil-alt">-</dd>
+              </div>
+            </dl>
+
+            <section class="height-profile" aria-labelledby="height-profile-title">
+              <div class="height-profile-header">
+                <h3 id="height-profile-title" data-i18n="heightProfileLabel">鉛直スケール</h3>
+                <span id="voxel-thickness" class="voxel-thickness">-</span>
+              </div>
+              <div class="profile-scale">
+                <span class="profile-endpoint" data-i18n="ceilShortLabel">天井</span>
+                <div class="voxel-bar" aria-hidden="true">
+                  <span class="center-line"></span>
+                  <span id="input-alt-marker" class="input-alt-marker">
+                    <span id="input-alt-label" class="input-alt-label">-</span>
+                  </span>
+                </div>
+                <span class="profile-endpoint" data-i18n="floorShortLabel">床</span>
+              </div>
+              <p class="map-height-note" data-i18n="mapHeightNote">
+                地図は水平範囲のみを表示します。高さはこの鉛直スケールで確認してください。
+              </p>
+            </section>
           </div>
         </section>
       </div>
