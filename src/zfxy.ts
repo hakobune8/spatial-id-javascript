@@ -30,16 +30,17 @@ const rad2deg = 180 / Math.PI;
 
 export function getParent(tile: ZFXYTile, steps: number = 1): ZFXYTile {
   const { f,x,y,z } = tile;
-  if (steps <= 0) {
-    throw new Error('steps must be greater than 0');
+  if (!Number.isSafeInteger(steps) || steps <= 0) {
+    throw new Error('steps must be a positive integer');
   }
   if (steps > z) {
     throw new Error(`Getting parent tile of ${tile}, ${steps} steps is not possible because it would go beyond the root tile (z=0)`);
   }
+  const divisor = 2 ** steps;
   return {
-    f: f >> steps,
-    x: x >> steps,
-    y: y >> steps,
+    f: Math.floor(f / divisor),
+    x: Math.floor(x / divisor),
+    y: Math.floor(y / divisor),
     z: z -  steps,
   };
 }

@@ -1,6 +1,14 @@
 import * as zfxy from "../src/zfxy";
 
 describe('zfxy', () => {
+  describe('getParent', () => {
+    it.each([0, -1, 1.5, Number.NaN])('rejects invalid steps: %s', (steps) => {
+      expect(() => zfxy.getParent({z: 2, f: 0, x: 0, y: 0}, steps)).toThrow(
+        'steps must be a positive integer'
+      );
+    });
+  });
+
   describe('getCenterLngLatAlt', () => {
     it('works', () => {
       const center1 = zfxy.getCenterLngLatAlt({z: 25, f: 0, x: 16777216, y: 16777216});
